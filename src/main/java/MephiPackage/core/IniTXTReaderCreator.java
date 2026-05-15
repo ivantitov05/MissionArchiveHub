@@ -8,6 +8,6 @@ public class IniTXTReaderCreator extends ReaderCreator{
 
     @Override
     public Reader createReader() {
-        return new IniTXTReader(new MissionBuilderImpl());
+        return new IniTXTReader();
     }
 }

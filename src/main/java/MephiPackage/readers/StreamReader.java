@@ -2,30 +2,34 @@ package MephiPackage.readers;
 
 import MephiPackage.builders.MissionBuilder;
 import MephiPackage.builders.MissionBuilderImpl;
-import MephiPackage.objects.*;
+import MephiPackage.objects.Mission;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+/**
+ * Ридер для потокового формата (pipe-разделитель).
+ * Только преобразует строки в Map универсальных ключей.
+ */
 public class StreamReader implements Reader {
-
-    private final MissionBuilder builder;
-
-    public StreamReader(MissionBuilder builder) {
-        this.builder = builder;
-    }
 
     @Override
     public Mission extract(File file) throws IOException {
-        System.out.println("пустой");
+        Map<String, String> data = new HashMap<>();
         List<String> lines = Files.readAllLines(file.toPath());
 
         if (lines.isEmpty()) {
             throw new IOException("Файл пуст");
         }
 
-        builder.reset();
+        int curseCounter = 0;
+        int sorcererCounter = 0;
+        int techniqueCounter = 0;
+        int timelineCounter = 0;
 
         for (String line : lines) {
             if (line.trim().isEmpty()) continue;
@@ -38,77 +42,61 @@ public class StreamReader implements Reader {
             switch (prefix) {
                 case "MISSION_CREATED":
                     if (parts.length >= 4) {
-                        builder.buildMissionId(parts[1])
-                                .buildDate(parts[2])
-                                .buildLocation(parts[3]);
+                        data.put("missionId", parts[1]);
+                        data.put("date", parts[2]);
+                        data.put("location", parts[3]);
                     }
                     break;
 
                 case "CURSE_DETECTED":
                     if (parts.length >= 3) {
-                        Curse curse = new Curse();
-                        curse.setName(parts[1]);
-                        curse.setThreatLevel(parts[2]);
-                        builder.buildCurse(curse);
+                        data.put("curse[" + curseCounter + "].name", parts[1]);
+                        data.put("curse[" + curseCounter + "].threatLevel", parts[2]);
+                        curseCounter++;
                     }
                     break;
 
                 case "SORCERER_ASSIGNED":
                     if (parts.length >= 3) {
-                        Sorcerer sorcerer = new Sorcerer();
-                        sorcerer.setName(parts[1]);
-                        sorcerer.setRank(parts[2]);
-                        builder.buildSorcerer(sorcerer);
+                        data.put("sorcerer[" + sorcererCounter + "].name", parts[1]);
+                        data.put("sorcerer[" + sorcererCounter + "].rank", parts[2]);
+                        sorcererCounter++;
                     }
                     break;
 
                 case "TECHNIQUE_USED":
                     if (parts.length >= 5) {
-                        Technique technique = new Technique();
-                        technique.setName(parts[1]);
-                        technique.setType(parts[2]);
-                        technique.setOwner(parts[3]);
-                        try {
-                            technique.setDamage(Long.parseLong(parts[4]));
-                        } catch (NumberFormatException e) {
-                            technique.setDamage(0);
-                        }
-                        builder.buildTechnique(technique);
+                        data.put("technique[" + techniqueCounter + "].name", parts[1]);
+                        data.put("technique[" + techniqueCounter + "].type", parts[2]);
+                        data.put("technique[" + techniqueCounter + "].owner", parts[3]);
+                        data.put("technique[" + techniqueCounter + "].damage", parts[4]);
+                        techniqueCounter++;
                     }
                     break;
 
                 case "TIMELINE_EVENT":
                     if (parts.length >= 4) {
-                        OperationTimeline event = new OperationTimeline();
-                        event.setTimestamp(parts[1]);
-                        event.setType(parts[2]);
-                        event.setDescription(parts[3]);
-                        builder.buildOperationTimeline(event);
+                        data.put("operationTimeline[" + timelineCounter + "].timestamp", parts[1]);
+                        data.put("operationTimeline[" + timelineCounter + "].type", parts[2]);
+                        data.put("operationTimeline[" + timelineCounter + "].description", parts[3]);
+                        timelineCounter++;
                     }
                     break;
 
                 case "MISSION_RESULT":
                     if (parts.length >= 2) {
-                        builder.buildOutcome(parts[1]);
+                        data.put("outcome", parts[1]);
                         if (parts.length >= 3) {
                             String damagePart = parts[2];
                             if (damagePart.startsWith("damageCost=")) {
-                                try {
-                                    long cost = Long.parseLong(damagePart.substring(11));
-                                    builder.buildDamageCost(cost);
-                                } catch (NumberFormatException e) {
-                                    // ignore
-                                }
+                                data.put("damageCost", damagePart.substring(11));
                             }
                         }
                     }
                     break;
 
                 case "CIVILIAN_IMPACT":
-                    CivilianImpact impact = parseCivilianImpact(line);
-                    if (impact != null) {
-                        builder.buildCivilianImpact(impact);
-                    }
+                    parseCivilianImpact(line, data);
                     break;
 
                 default:
@@ -116,39 +104,28 @@ public class StreamReader implements Reader {
             }
         }
 
-        return builder.getResult();
+        MissionBuilder builder = new MissionBuilderImpl();
+        return builder.load(data).build();
     }
 
-    private CivilianImpact parseCivilianImpact(String line) {
-        CivilianImpact impact = new CivilianImpact();
-
+    private void parseCivilianImpact(String line, Map<String, String> data) {
         String[] parts = line.split("\\|");
-        boolean hasData = false;
 
         for (int i = 1; i < parts.length; i++) {
             String[] kv = parts[i].split("=");
             if (kv.length == 2) {
-                try {
-                    switch (kv[0]) {
-                        case "evacuated":
-                            impact.setEvacuated(Long.parseLong(kv[1]));
-                            hasData = true;
-                            break;
-                        case "injured":
-                            impact.setInjured(Long.parseLong(kv[1]));
-                            hasData = true;
-                            break;
-                        case "missing":
-                            impact.setMissing(Long.parseLong(kv[1]));
-                            hasData = true;
-                            break;
-                    }
-                } catch (NumberFormatException e) {
-                    // ignore
+                switch (kv[0]) {
+                    case "evacuated":
+                        data.put("civilianImpact.evacuated", kv[1]);
+                        break;
+                    case "injured":
+                        data.put("civilianImpact.injured", kv[1]);
+                        break;
+                    case "missing":
+                        data.put("civilianImpact.missing", kv[1]);
+                        break;
                 }
             }
         }
-
-        return hasData ? impact : null;
     }
 }

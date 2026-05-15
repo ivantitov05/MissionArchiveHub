@@ -5,11 +5,14 @@ import MephiPackage.logging.EventType;
 import MephiPackage.objects.Mission;
 import MephiPackage.utils.FileFormat;
 import MephiPackage.utils.FileTypeDetector;
+import org.springframework.stereotype.Component;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.EnumMap;
 import java.util.function.Supplier;
 
+@Component
 public class MissionReader {
 
     private static final EnumMap<FileFormat, Supplier<ReaderCreator>> CREATORS = new EnumMap<>(FileFormat.class);

@@ -20,9 +20,6 @@ public class EnemyActivity {
     }
 
     public List<String> getTargetPriority() { return targetPriority; }
-    public void setTargetPriority(List<String> targetPriority) {
-        this.targetPriority = targetPriority;
-    }
 
     public void setTargetPriority(String targetPriority) {
         if (this.targetPriority == null) {
@@ -35,9 +32,6 @@ public class EnemyActivity {
     }
 
     public List<String> getAttackPatterns() { return attackPatterns; }
-    public void setAttackPatterns(List<String> attackPatterns) {
-        this.attackPatterns = attackPatterns;
-    }
 
     public void setAttackPatterns(String attackPattern) {
         if (this.attackPatterns == null) {

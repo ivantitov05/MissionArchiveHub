@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Архив магических миссий</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        h1, h2, h3 {
+            color: #1e2a3a;
+            margin-top: 0;
+        }
+        h1 {
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        button:hover {
+            transform: translateY(-1px);
+            opacity: 0.9;
+        }
+        button.danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+        button.secondary {
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        }
+        input, select {
+            padding: 8px 12px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            vertical-align: middle;
+        }
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }
+        tr:hover {
+            background: #f5f5f5;
+        }
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 12px;
+            overflow-x: auto;
+            font-size: 12px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .flex-row {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .mission-list {
+            flex: 2;
+            min-width: 500px;
+        }
+        .mission-detail {
+            flex: 3;
+            min-width: 400px;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            background: #f0f2f5;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .report-buttons {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .badge.success { background: #d4edda; color: #155724; }
+        .badge.failure { background: #f8d7da; color: #721c24; }
+        .badge.partial { background: #fff3cd; color: #856404; }
+        hr {
+            margin: 20px 0;
+            border: none;
+            border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📜 Архив магических миссий Токийского магического колледжа</h1>
+
+    <!-- Секция загрузки -->
+    <div style="background: #f8f9fa; padding: 15px; border-radius: 12px;">
+        <h3 style="margin-top: 0;">📤 Загрузить файл миссии</h3>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+            <input type="file" id="fileInput" accept=".json,.xml,.yaml,.yml,.txt,.ini,.csv" style="flex: 2;">
+            <label>Формат:</label>
+            <select id="fileFormat" style="width: auto;">
+                <option value="auto">🤖 Автоопределение</option>
+                <option value="json">📄 JSON</option>
+                <option value="xml">📄 XML</option>
+                <option value="yaml">📄 YAML</option>
+                <option value="txt">📄 TXT</option>
+                <option value="ini">📄 INI</option>
+            </select>
+            <button onclick="uploadMission()">🚀 Отправить</button>
+            <button onclick="document.getElementById('fileInput').value = ''" class="secondary">🗑️ Очистить</button>
+        </div>
+        <div id="uploadStatus" class="status" style="display: none;"></div>
+    </div>
+
+    <hr>
+
+    <div class="flex-row">
+        <!-- Список миссий -->
+        <div class="mission-list">
+            <h2>📋 Список миссий</h2>
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <button onclick="loadMissions()">🔄 Обновить список</button>
+                <button onclick="refreshAll()" class="secondary">🔄 Обновить всё</button>
+            </div>
+            <div id="missionsLoading" style="display: none; text-align: center; padding: 20px;">
+                <div class="loading"></div> Загрузка...
+            </div>
+            <div style="overflow-x: auto;">
+                <table id="missionsTable">
+                    <thead>
+                    <tr><th>ID</th><th>Mission ID</th><th>Дата</th><th>Локация</th><th>Итог</th><th>Действия</th><th>Удалить</th></tr>
+                    </thead>
+                    <tbody id="missionsTbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Детали миссии -->
+        <div class="mission-detail">
+            <h2>🔍 Детали миссии</h2>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <input type="number" id="detailId" placeholder="Введите ID миссии" style="width: 150px;">
+                <button onclick="loadMissionDetail()">👁️ Показать</button>
+                <select id="reportType" style="width: auto;">
+                    <option value="summary">📊 Краткий отчёт</option>
+                    <option value="detailed">📋 Детальный отчёт</option>
+                    <option value="risk">⚠️ Анализ рисков</option>
+                </select>
+                <button onclick="generateReport()">📄 Сгенерировать отчёт</button>
+            </div>
+            <div id="reportResult" class="status info" style="display: none;"></div>
+            <div style="margin-top: 15px;">
+                <strong>JSON данные:</strong>
+                <pre id="missionDetailJson">Выберите миссию для просмотра</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = "http://localhost:8080/api/missions";
+
+    function showStatus(elementId, message, type) {
+        const el = document.getElementById(elementId);
+        el.innerHTML = message;
+        el.className = `status ${type}`;
+        el.style.display = "block";
+        setTimeout(() => {
+            if (elementId !== "reportResult") {
+                el.style.display = "none";
+            }
+        }, 5000);
+    }
+
+    async function uploadMission() {
+        const fileInput = document.getElementById("fileInput");
+        const file = fileInput.files[0];
+        if (!file) {
+            alert("Выберите файл");
+            return;
+        }
+
+        const format = document.getElementById("fileFormat").value;
+        const formData = new FormData();
+        formData.append("file", file);
+        if (format !== "auto") {
+            formData.append("format", format);
+        }
+
+        showStatus("uploadStatus", "⏳ Загрузка...", "info");
+
+        try {
+            const response = await fetch(`${API_BASE}/upload`, {
+                method: "POST",
+                body: formData
+            });
+
+            if (!response.ok) {
+                const error = await response.text();
+                throw new Error(`HTTP ${response.status}: ${error}`);
+            }
+
+            const result = await response.json();
+            showStatus("uploadStatus", `✅ ${result.message || "Миссия успешно загружена!"} ID: ${result.id || "?"}`, "success");
+            fileInput.value = "";
+            loadMissions();
+        } catch (err) {
+            showStatus("uploadStatus", `❌ Ошибка: ${err.message}`, "error");
+        }
+    }
+
+    function getOutcomeBadge(outcome) {
+        const outcomeLower = (outcome || "").toLowerCase();
+        if (outcomeLower.includes("success")) return '<span class="badge success">✓ SUCCESS</span>';
+        if (outcomeLower.includes("fail")) return '<span class="badge failure">✗ FAILURE</span>';
+        if (outcomeLower.includes("partial")) return '<span class="badge partial">◷ PARTIAL</span>';
+        return `<span class="badge">${outcome || "—"}</span>`;
+    }
+
+    async function loadMissions() {
+        const tbody = document.getElementById("missionsTbody");
+        const loadingDiv = document.getElementById("missionsLoading");
+        loadingDiv.style.display = "block";
+
+        try {
+            const response = await fetch(API_BASE);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const missions = await response.json();
+
+            tbody.innerHTML = "";
+            for (const m of missions) {
+                const row = tbody.insertRow();
+                row.insertCell(0).innerText = m.id;
+                row.insertCell(1).innerText = m.missionId || "—";
+                row.insertCell(2).innerText = m.date || "—";
+                row.insertCell(3).innerText = m.location || "—";
+                row.insertCell(4).innerHTML = getOutcomeBadge(m.outcome);
+
+                // Кнопка "Показать"
+                const showBtn = document.createElement("button");
+                showBtn.innerText = "👁️ Показать";
+                showBtn.style.margin = "0";
+                showBtn.onclick = () => {
+                    document.getElementById("detailId").value = m.id;
+                    loadMissionDetail();
+                };
+                const cellAction = row.insertCell(5);
+                cellAction.appendChild(showBtn);
+
+                // Кнопка "Удалить"
+                const deleteBtn = document.createElement("button");
+                deleteBtn.innerText = "🗑️ Удалить";
+                deleteBtn.style.margin = "0";
+                deleteBtn.style.background = "linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)";
+                deleteBtn.onclick = async () => {
+                    if (confirm(`Удалить миссию "${m.missionId}"?`)) {
+                        try {
+                            const delResponse = await fetch(`${API_BASE}/${m.id}`, {
+                                method: "DELETE"
+                            });
+                            if (delResponse.ok) {
+                                showStatus("uploadStatus", `✅ Миссия ${m.missionId} удалена`, "success");
+                                loadMissions();
+                                if (document.getElementById("detailId").value == m.id) {
+                                    document.getElementById("missionDetailJson").innerText = "Миссия удалена";
+                                }
+                            } else {
+                                throw new Error(`HTTP ${delResponse.status}`);
+                            }
+                        } catch (err) {
+                            showStatus("uploadStatus", `❌ Ошибка удаления: ${err.message}`, "error");
+                        }
+                    }
+                };
+                const cellDelete = row.insertCell(6);
+                cellDelete.appendChild(deleteBtn);
+            }
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="7">Ошибка загрузки: ${err.message}</td></tr>`;
+        } finally {
+            loadingDiv.style.display = "none";
+        }
+    }
+
+    async function loadMissionDetail() {
+        const id = document.getElementById("detailId").value;
+        if (!id) {
+            document.getElementById("missionDetailJson").innerText = "Введите ID миссии";
+            return;
+        }
+
+        document.getElementById("missionDetailJson").innerText = "Загрузка...";
+
+        try {
+            const response = await fetch(`${API_BASE}/${id}`);
+            if (!response.ok) throw new Error(`HTTP ${response.status} — миссия не найдена`);
+            const data = await response.json();
+            document.getElementById("missionDetailJson").innerText = JSON.stringify(data, null, 2);
+        } catch (err) {
+            document.getElementById("missionDetailJson").innerText = `❌ Ошибка: ${err.message}`;
+        }
+    }
+
+    async function generateReport() {
+        const id = document.getElementById("detailId").value;
+        const reportType = document.getElementById("reportType").value;
+
+        if (!id) {
+            showStatus("reportResult", "⚠️ Сначала выберите миссию", "error");
+            return;
+        }
+
+        showStatus("reportResult", "⏳ Генерация отчёта...", "info");
+
+        try {
+            const response = await fetch(`${API_BASE}/${id}/report?type=${reportType}`);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const report = await response.text();
+            showStatus("reportResult", "✅ Отчёт готов! Смотрите ниже", "success");
+            document.getElementById("missionDetailJson").innerText = report;
+        } catch (err) {
+            showStatus("reportResult", `❌ Ошибка: ${err.message}`, "error");
+        }
+    }
+
+    async function refreshAll() {
+        await loadMissions();
+        const id = document.getElementById("detailId").value;
+        if (id) await loadMissionDetail();
+    }
+
+    // Загрузка при открытии страницы
+    window.onload = () => {
+        loadMissions();
+    };
+</script>
+</body>
+</html>

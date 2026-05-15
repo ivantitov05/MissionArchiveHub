@@ -15,11 +15,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+
 public class MissionTool {
     public static void main(String[] args) {
         EventManager eventManager = EventManager.getInstance();
 
-        // Подписываем наблюдателей
         eventManager.subscribeToAll(new ConsoleLogger());
         FileLogger fileLogger = new FileLogger();
         eventManager.subscribeToAll(fileLogger);

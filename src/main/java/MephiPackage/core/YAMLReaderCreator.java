@@ -8,6 +8,6 @@ public class YAMLReaderCreator extends ReaderCreator {
 
     @Override
     public Reader createReader() {
-        return new YAMLReader(new MissionBuilderImpl());
+        return new YAMLReader();
     }
 }

@@ -4,7 +4,7 @@ import MephiPackage.enums.SorcererRank;
 
 public class Sorcerer {
     private String name;
-    private SorcererRank rank;  // ← тип enum
+    private SorcererRank rank;
 
     public Sorcerer() {}
 

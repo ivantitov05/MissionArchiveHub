@@ -1,46 +1,38 @@
 package MephiPackage.builders;
 
-import MephiPackage.enums.Outcome;
-import MephiPackage.objects.*;
+import MephiPackage.objects.Mission;
+import java.util.Map;
 
+/**
+ * Строитель для создания объекта Mission.
+ * Соответствует паттерну Builder из GoF.
+ */
 public interface MissionBuilder {
 
-    MissionBuilder buildMissionId(String missionId);
-    MissionBuilder buildDate(String date);
-    MissionBuilder buildLocation(String location);
-    MissionBuilder buildOutcome(String outcome);
-    MissionBuilder buildDamageCost(long damageCost);
-    MissionBuilder buildComment(String comment);
+    /**
+     * Загружает Map с данными миссии в билдер.
+     * Ключи имеют формат:
+     * - простые поля: "missionId", "date", "location", "outcome", "damageCost", "comment"
+     * - вложенные объекты: "curse.name", "curse.threatLevel"
+     * - массивы: "sorcerer[0].name", "technique[0].type", "operationTimeline[0].timestamp"
+     *
+     * @param data Map, где ключ — путь к полю, значение — строковое представление
+     * @return this (для chaining)
+     */
+    MissionBuilder load(Map<String, String> data);
 
-    MissionBuilder buildCurse(Curse curse);
+    /**
+     * Загружает одну пару ключ-значение.
+     */
+    MissionBuilder load(String key, String value);
 
-    MissionBuilder buildSorcerer(Sorcerer sorcerer);
+    /**
+     * Создаёт объект Mission из загруженных данных.
+     */
+    Mission build();
 
-    MissionBuilder buildTechnique(Technique technique);
-
-    MissionBuilder buildEconomicAssessment(EconomicAssessment assessment);
-
-    MissionBuilder buildCivilianImpact(CivilianImpact impact);
-
-    MissionBuilder buildEnvironmentConditions(EnvironmentConditions conditions);
-
-    MissionBuilder buildOperationTimeline(OperationTimeline timeline);
-
-    MissionBuilder buildOperationTag(String tag);
-
-    MissionBuilder buildSupportUnit(String unit);
-
-    MissionBuilder buildRecommendation(String recommendation);
-
-    MissionBuilder buildNotes(String notes);
-
-    MissionBuilder buildArtifactRecovered(String artifact);
-
-    MissionBuilder buildEvacuationZone(String zone);
-
-    MissionBuilder buildStatusEffect(String effect);
-
-    Mission getResult();
-
-    MissionBuilder reset();
+    /**
+     * Сбрасывает билдер для переиспользования.
+     */
+    void reset();
 }
